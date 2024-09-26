@@ -38,10 +38,8 @@ MAINTAINER Lee Evans - www.ltscomputingllc.com
 ENV JAVA_OPTS=""
 # Additional classpath parameters to pass along. If provided, start with colon ":"
 ENV CLASSPATH=""
-# Default Java options. The first entry is a fix for when java reads secure random numbers:
-# in a containerized system using /dev/random may reduce entropy too much, causing slowdowns.
-# https://ruleoftech.com/2016/avoiding-jvm-delays-caused-by-random-number-generation
-ENV DEFAULT_JAVA_OPTS="-Djava.security.egd=file:///dev/./urandom"
+# Default Java options
+ENV DEFAULT_JAVA_OPTS=""
 
 # set working directory to a fixed WebAPI directory
 WORKDIR /var/lib/ohdsi/webapi
