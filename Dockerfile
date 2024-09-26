@@ -1,4 +1,4 @@
-FROM maven:3.6-jdk-11 as builder
+FROM maven:3-amazoncorretto-8-al2023 AS builder
 
 WORKDIR /code
 
@@ -30,7 +30,7 @@ RUN mvn package ${MAVEN_PARAMS} \
     && rm WebAPI.war
 
 # OHDSI WebAPI and ATLAS web application running as a Spring Boot application with Java 8
-FROM index.docker.io/library/eclipse-temurin:8-jre
+FROM amazoncorretto:8-al2023
 
 MAINTAINER Lee Evans - www.ltscomputingllc.com
 
