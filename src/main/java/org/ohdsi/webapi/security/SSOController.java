@@ -67,6 +67,10 @@ public class SSOController {
     @Path("/saml-metadata")
     public void samlMetadata(@Context HttpServletResponse response) throws IOException {
 
+        if(metadataLocation == null || metadataLocation.isEmpty()) {
+            response.sendError(HttpServletResponse.SC_NO_CONTENT, "SAML Metadata not configured");
+            return;
+        }
         ClassPathResource resource = new ClassPathResource(metadataLocation);
         final InputStream is = resource.getInputStream();
         response.setContentType(MediaType.APPLICATION_XML);

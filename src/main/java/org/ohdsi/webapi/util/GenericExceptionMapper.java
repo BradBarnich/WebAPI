@@ -44,7 +44,7 @@ import org.ohdsi.webapi.vocabulary.ConceptRecommendedNotInstalledException;
  *
  * @author fdefalco
  */
-
+/*
 @Provider
 public class GenericExceptionMapper implements ExceptionMapper<Throwable> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GenericExceptionMapper.class);
@@ -116,4 +116,4 @@ public class GenericExceptionMapper implements ExceptionMapper<Throwable> {
         }
         return null;
     }
-}
+} */

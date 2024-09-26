@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -18,12 +17,9 @@ import java.util.stream.Collectors;
 @Service
 public class CDMCacheBatchService {
     private final CDMCacheRepository cdmCacheRepository;
-    
-    private final EntityManager entityManager;
 
-    public CDMCacheBatchService(CDMCacheRepository cdmCacheRepository, EntityManager entityManager) {
+    public CDMCacheBatchService(CDMCacheRepository cdmCacheRepository) {
         this.cdmCacheRepository = cdmCacheRepository;
-        this.entityManager = entityManager;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

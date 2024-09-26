@@ -42,6 +42,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.ohdsi.webapi.Constants.Params.DESIGN_HASH;
 import static org.ohdsi.webapi.Constants.Params.RESULTS_DATABASE_SCHEMA;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.transaction.support.TransactionTemplate;
 
 
 public class GenerationCacheTest extends AbstractDatabaseTest {
@@ -71,6 +72,9 @@ public class GenerationCacheTest extends AbstractDatabaseTest {
 
     @Autowired
     private CohortDefinitionRepository cohortDefinitionRepository;
+
+    @Autowired
+    private TransactionTemplate transactionTemplate;
     
     @Value("${datasource.ohdsi.schema}")
     private String ohdsiSchema;
@@ -182,8 +186,9 @@ public class GenerationCacheTest extends AbstractDatabaseTest {
                 cohortGenerationRequestBuilder,
                 (resId, sqls) -> {}
         );
+        GenerationCache generationCache = transactionTemplate.execute(status ->
+                generationCacheService.getCacheOrEraseInvalid(type, generationCacheService.getDesignHash(type, cohortDefinition.getDetails().getExpression()), source.getSourceId()));
 
-        GenerationCache generationCache = generationCacheService.getCacheOrEraseInvalid(type, generationCacheService.getDesignHash(type, cohortDefinition.getDetails().getExpression()), source.getSourceId());
         Assert.assertNotNull("Empty result set is cached", generationCache);
     }
 

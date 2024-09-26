@@ -5,10 +5,18 @@
 
   <groupId>org.ohdsi</groupId>
   <artifactId>WebAPI</artifactId>
-  <packaging>war</packaging>
+  <packaging>jar</packaging>
   <version>2.15.0-SNAPSHOT</version>
   <name>WebAPI</name>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>1.5.22.RELEASE</version>
+  </parent>
+
   <properties>
+    <!--suppress UnresolvedMavenProperty -->
     <build.number>${BUILD_NUMBER}</build.number>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Spring Boot manages spring.version as well -->
@@ -17,8 +25,8 @@
     <flyway.version>4.2.0</flyway.version>
     <waffle.version>2.2.1</waffle.version>
     <jna.version>5.5.0</jna.version>
-    <hibernate.version>5.4.2.Final</hibernate.version>
-    <postgresql.version>42.3.7</postgresql.version>
+    <hibernate.version>5.4.33.Final</hibernate.version>
+    <postgresql.version>42.7.2</postgresql.version>
     <bouncycastle.version>1.69</bouncycastle.version>
     <shiro.version>1.12.0</shiro.version>
     <dom4j.version>2.1.3</dom4j.version>
@@ -29,11 +37,12 @@
     <commons-fileupload.version>1.5</commons-fileupload.version>
 
     <circe.version>1.11.2</circe.version>
-    <jersey.version>2.14</jersey.version>
+    <jersey.version>2.25.1</jersey.version>
+    <jersey-media-multipart.version>2.25.1</jersey-media-multipart.version>
     <SqlRender.version>1.16.1</SqlRender.version>
     <hive-jdbc.version>3.1.2</hive-jdbc.version>
     <pac4j.version>4.0.0</pac4j.version>
-    <jackson.version>2.12.7</jackson.version>
+    <jackson.version>2.17.2</jackson.version>
     <start-class>org.ohdsi.webapi.WebApi</start-class>
     <skipUnitTests>false</skipUnitTests>
     <skipITtests>false</skipITtests>
@@ -42,21 +51,20 @@
     <maven.compiler.target>1.8</maven.compiler.target>
 
     <!-- Primary DataSource -->
-    <!-- default sql server - TODO How about making postgres the default (e.g. in line with open source tech)? -alexfranken -->
-    <datasource.driverClassName>com.microsoft.sqlserver.jdbc.SQLServerDriver</datasource.driverClassName>
-    <datasource.url>jdbc:sqlserver://serverName;databaseName=databaseName</datasource.url>
-    <datasource.username>user</datasource.username>
-    <datasource.password>password</datasource.password>
-    <!--<datasource.validationQuery>SELECT 1</datasource.validationQuery>-->
-    <datasource.dialect>sql server</datasource.dialect>
-    <datasource.ohdsi.schema>dbo</datasource.ohdsi.schema>
-    <datasource.dialect.source>sql server</datasource.dialect.source>
+    <datasource.driverClassName>org.postgresql.Driver</datasource.driverClassName>
+    <hibernate.dialect>org.hibernate.dialect.PostgreSQL9Dialect</hibernate.dialect>
+    <datasource.url>jdbc:postgresql://localhost:5432/ohdsi</datasource.url>
+    <datasource.username>postgres</datasource.username>
+    <datasource.password>postgres</datasource.password>
+    <datasource.dialect>postgresql</datasource.dialect>
+    <datasource.dialect.source>postgresql</datasource.dialect.source>
+    <datasource.ohdsi.schema>ohdsi</datasource.ohdsi.schema>
     <!-- DB Change Management / Migration -->
-    <flyway.datasource.driverClassName>com.microsoft.sqlserver.jdbc.SQLServerDriver</flyway.datasource.driverClassName>
-    <flyway.datasource.url>jdbc:sqlserver://serverName</flyway.datasource.url>
-    <flyway.datasource.username>userWithWritePrivs</flyway.datasource.username>
-    <flyway.datasource.password>password</flyway.datasource.password>
-    <flyway.locations>classpath:db/migration/sqlserver</flyway.locations>
+    <flyway.datasource.driverClassName>${datasource.driverClassName}</flyway.datasource.driverClassName>
+    <flyway.datasource.url>${datasource.url}</flyway.datasource.url>
+    <flyway.datasource.username>${datasource.username}</flyway.datasource.username>
+    <flyway.datasource.password>${datasource.password}</flyway.datasource.password>
+    <flyway.locations>classpath:db/migration/postgresql</flyway.locations>
     <!-- Note: Schema name is case-sensitive. -->
     <flyway.schemas>${datasource.ohdsi.schema}</flyway.schemas>
     <flyway.validateOnMigrate>false</flyway.validateOnMigrate>
@@ -78,10 +86,10 @@
     <spring.batch.repository.isolationLevelForCreate>ISOLATION_READ_COMMITTED</spring.batch.repository.isolationLevelForCreate>
     <spring.profiles.active>default</spring.profiles.active>
 
-    <security.provider>DisabledSecurity</security.provider>
+    <security.provider>AtlasRegularSecurity</security.provider>
     <security.token.expiration>43200</security.token.expiration>
-    <security.origin>http://localhost</security.origin>
-    <security.ssl.enabled>false</security.ssl.enabled>
+    <security.origin>*</security.origin>
+    <security.ssl.enabled>true</security.ssl.enabled>
     <security.oauth.callback.ui>http://localhost/Atlas/#/welcome</security.oauth.callback.ui>
     <security.oauth.callback.api>http://localhost:8080/WebAPI/user/oauth/callback</security.oauth.callback.api>
     <!-- Available options for callback urlResolver are: query and path -->
@@ -152,7 +160,7 @@
     <security.googleIap.backendServiceId></security.googleIap.backendServiceId>
     <security.google.accessToken.enabled>false</security.google.accessToken.enabled>
 
-    <security.cors.enabled>true</security.cors.enabled>
+    <security.cors.enabled>false</security.cors.enabled>
     <security.maxLoginAttempts>3</security.maxLoginAttempts>
     <security.duration.initial>10</security.duration.initial>
     <security.duration.increment>10</security.duration.increment>
@@ -195,13 +203,12 @@
     
     <!-- EMBEDDED SERVER CONFIGURATION (ServerProperties) -->
     <server.port>8080</server.port>
-    <server.ssl.key-store></server.ssl.key-store>
-    <server.ssl.key-store-password></server.ssl.key-store-password>
-    <server.ssl.key-password></server.ssl.key-password>
+    <server.ssl.key-store>mykeystore.jks</server.ssl.key-store>
+    <server.ssl.key-store-password>webapi</server.ssl.key-store-password>
+    <server.ssl.key-password>webapi</server.ssl.key-password>
     <server.servlet.context-path>/WebAPI</server.servlet.context-path>
 
     <arachne.version>1.17.3</arachne.version>
-    <jersey-media-multipart.version>2.25.1</jersey-media-multipart.version>
     <execution.invalidation.period>600000</execution.invalidation.period>
     <execution.invalidation.maxage.hours>12</execution.invalidation.maxage.hours>
     <execution.status.period>10000</execution.status.period>
@@ -299,11 +306,11 @@
     <audit.trail.log.extraFile>/tmp/atlas/audit/audit-extra.log</audit.trail.log.extraFile>
   </properties>
   <build>
-    <finalName>WebAPI</finalName>
-    <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
-    <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
-    <outputDirectory>${basedir}/target/classes</outputDirectory>
-    <testOutputDirectory>${basedir}/target/test-classes</testOutputDirectory>
+<!--    <finalName>WebAPI</finalName>-->
+<!--    <sourceDirectory>${basedir}/src/main/java</sourceDirectory>-->
+<!--    <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>-->
+<!--    <outputDirectory>${basedir}/target/classes</outputDirectory>-->
+<!--    <testOutputDirectory>${basedir}/target/test-classes</testOutputDirectory>-->
     <resources>
       <resource>
         <directory>src/main/resources</directory>
@@ -350,105 +357,123 @@
         <artifactId>maven-dependency-plugin</artifactId>
         <version>3.5.0</version>
       </plugin>
-      <plugin>
-        <groupId>pl.project13.maven</groupId>
-        <artifactId>git-commit-id-plugin</artifactId>
-        <version>4.0.0</version>
-        <executions>
-          <execution>
-            <phase>validate</phase>
-            <goals>
-              <goal>revision</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <generateGitPropertiesFile>false</generateGitPropertiesFile>
-          <failOnNoGitDirectory>false</failOnNoGitDirectory>
-          <!-- only include properties to speed up plugin -->
-          <!-- ref: https://github.com/git-commit-id/git-commit-id-maven-plugin/issues/462 -->
-          <includeOnlyProperties>
-              <includeOnlyProperty>git.branch</includeOnlyProperty>
-              <includeOnlyProperty>git.commit.id.abbrev</includeOnlyProperty>
-          </includeOnlyProperties>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.gmaven</groupId>
-        <artifactId>gmaven-plugin</artifactId>
-        <version>1.5</version>
-        <executions>
-          <execution>
-            <id>add-git-branch-info</id>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>execute</goal>
-            </goals>
-            <configuration>
-              <source>
-                if (project.properties.getProperty("git.branch") == null) project.properties.setProperty("git.branch", "*");
-                if (project.properties.getProperty("git.commit.id.abbrev") == null) project.properties.setProperty("git.commit.id.abbrev", "*");
-              </source>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+<!--      <plugin>-->
+<!--        <groupId>pl.project13.maven</groupId>-->
+<!--        <artifactId>git-commit-id-plugin</artifactId>-->
+<!--        <version>4.0.0</version>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <phase>validate</phase>-->
+<!--            <goals>-->
+<!--              <goal>revision</goal>-->
+<!--            </goals>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--        <configuration>-->
+<!--          <generateGitPropertiesFile>false</generateGitPropertiesFile>-->
+<!--          <failOnNoGitDirectory>false</failOnNoGitDirectory>-->
+<!--          &lt;!&ndash; only include properties to speed up plugin &ndash;&gt;-->
+<!--          &lt;!&ndash; ref: https://github.com/git-commit-id/git-commit-id-maven-plugin/issues/462 &ndash;&gt;-->
+<!--          <includeOnlyProperties>-->
+<!--              <includeOnlyProperty>git.branch</includeOnlyProperty>-->
+<!--              <includeOnlyProperty>git.commit.id.abbrev</includeOnlyProperty>-->
+<!--          </includeOnlyProperties>-->
+<!--        </configuration>-->
+<!--      </plugin>-->
+<!--      <plugin>-->
+<!--        <groupId>org.codehaus.gmaven</groupId>-->
+<!--        <artifactId>gmaven-plugin</artifactId>-->
+<!--        <version>1.5</version>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <id>add-git-branch-info</id>-->
+<!--            <phase>generate-resources</phase>-->
+<!--            <goals>-->
+<!--              <goal>execute</goal>-->
+<!--            </goals>-->
+<!--            <configuration>-->
+<!--              <source>-->
+<!--                if (project.properties.getProperty("git.branch") == null) project.properties.setProperty("git.branch", "*");-->
+<!--                if (project.properties.getProperty("git.commit.id.abbrev") == null) project.properties.setProperty("git.commit.id.abbrev", "*");-->
+<!--              </source>-->
+<!--            </configuration>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
-        <version>${spring.boot.version}</version>
+<!--        <version>${spring.boot.version}</version>-->
         <!-- executable-war via 'java -jar WebAPI-exec.war' currently fails with Jersey FileNotFound exception. TODO -->
+<!--        <configuration>-->
+<!--          &lt;!&ndash; Since we filter properties files via Maven, do not add resources. &ndash;&gt;-->
+<!--          <addResources>false</addResources>-->
+<!--          <mainClass>org.ohdsi.webapi.WebApi</mainClass>-->
+<!--          <additionalProperties>-->
+<!--            &lt;!&ndash;suppress UnresolvedMavenProperty &ndash;&gt;-->
+<!--            <git.branch>${git.branch}</git.branch>-->
+<!--            &lt;!&ndash;suppress UnresolvedMavenProperty &ndash;&gt;-->
+<!--            <git.commit.id>${git.commit.id.abbrev}</git.commit.id>-->
+<!--            <atlas.milestone.id>${buildinfo.atlas.milestone.id}</atlas.milestone.id>-->
+<!--            <webapi.milestone.id>${buildinfo.webapi.milestone.id}</webapi.milestone.id>-->
+<!--            <atlas.release.tag>${buildinfo.atlas.release.tag}</atlas.release.tag>-->
+<!--            <webapi.release.tag>${buildinfo.webapi.release.tag}</webapi.release.tag>-->
+<!--          </additionalProperties>-->
+<!--        </configuration>-->
         <configuration>
-          <!-- Since we filter properties files via Maven, do not add resources. -->
-          <addResources>false</addResources>
-          <mainClass>org.ohdsi.webapi.WebApi</mainClass>
-          <additionalProperties>
-            <git.branch>${git.branch}</git.branch>
-            <git.commit.id>${git.commit.id.abbrev}</git.commit.id>
-            <atlas.milestone.id>${buildinfo.atlas.milestone.id}</atlas.milestone.id>
-            <webapi.milestone.id>${buildinfo.webapi.milestone.id}</webapi.milestone.id>
-            <atlas.release.tag>${buildinfo.atlas.release.tag}</atlas.release.tag>
-            <webapi.release.tag>${buildinfo.webapi.release.tag}</webapi.release.tag>
-          </additionalProperties>
+          <requiresUnpack>
+            <dependency>
+              <groupId>com.sun.jersey</groupId>
+              <artifactId>jersey-server</artifactId>
+            </dependency>
+            <dependency>
+              <groupId>com.sun.jersey</groupId>
+              <artifactId>jersey-core</artifactId>
+            </dependency>
+            <dependency>
+              <groupId>com.sun.jersey</groupId>
+              <artifactId>jersey-servlet</artifactId>
+            </dependency>
+          </requiresUnpack>
         </configuration>
         <executions>
           <execution>
             <goals>
               <goal>build-info</goal>
-              <goal>repackage</goal>
+<!--              <goal>repackage</goal>-->
             </goals>
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.22.2</version>
-        <configuration>
-          <skipTests>${skipUnitTests}</skipTests>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.10.1</version>
-        <inherited>true</inherited>
-        <configuration>
-          <compilerArgs>
-            <!-- Prevents recompilation due to missing package-info.class, see MCOMPILER-205 -->
-            <arg>-Xpkginfo:always</arg>
-          </compilerArgs>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-war-plugin</artifactId>
-        <version>3.3.1</version>
-        <configuration>
-          <failOnMissingWebXml>false</failOnMissingWebXml>
-          <attachClasses>true</attachClasses>
-        </configuration>
-      </plugin>
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-surefire-plugin</artifactId>-->
+<!--        <version>2.22.2</version>-->
+<!--        <configuration>-->
+<!--          <skipTests>${skipUnitTests}</skipTests>-->
+<!--        </configuration>-->
+<!--      </plugin>-->
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-compiler-plugin</artifactId>-->
+<!--        <version>3.10.1</version>-->
+<!--        <inherited>true</inherited>-->
+<!--        <configuration>-->
+<!--          <compilerArgs>-->
+<!--            &lt;!&ndash; Prevents recompilation due to missing package-info.class, see MCOMPILER-205 &ndash;&gt;-->
+<!--            <arg>-Xpkginfo:always</arg>-->
+<!--          </compilerArgs>-->
+<!--        </configuration>-->
+<!--      </plugin>-->
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-war-plugin</artifactId>-->
+<!--        <version>3.3.1</version>-->
+<!--        <configuration>-->
+<!--          <failOnMissingWebXml>false</failOnMissingWebXml>-->
+<!--          <attachClasses>true</attachClasses>-->
+<!--        </configuration>-->
+<!--      </plugin>-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
@@ -470,51 +495,51 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>com.qmino</groupId>
-        <artifactId>miredot-plugin</artifactId>
-        <version>2.4.0</version>
-        <executions>
-          <execution>
-            <phase>${miredot.phase}</phase>
-            <goals>
-              <goal>restdoc</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <licence>cHJvamVjdHxvcmcub2hkc2kuV2ViQVBJfDIwMjUtMDEtMDF8ZmFsc2V8LTEjTUN3Q0ZDZkowMkZrVmVSeVlBazZVbTBmNThIbE15SjRBaFEwcVZyRUZuamZMTzJ0KzFtR3E3U3lMMkFESHc9PQ==</licence>
-          <restModel>
-            <httpStatusCodes>
-              <httpStatusCode>
-                <httpCode>200</httpCode>
-                <document>always</document>
-                <defaultMessage>The service call has completed successfully.</defaultMessage>
-              </httpStatusCode>
-              <httpStatusCode>
-                <httpCode>401</httpCode>
-                <document>Authorization Exception</document>
-                <defaultMessage>The user is not authorized to use this service.</defaultMessage>
-              </httpStatusCode>
-              <httpStatusCode>
-                <httpCode>412</httpCode>
-                <document>put,post</document>
-                <defaultMessage>Invalid JSON/XML input.</defaultMessage>
-              </httpStatusCode>
-              <httpStatusCode>
-                <httpCode>500</httpCode>
-                <document>always</document>
-                <defaultMessage>The service call has not succeeded.</defaultMessage>
-              </httpStatusCode>
-            </httpStatusCodes>
-          </restModel>
-          <output>
-            <html>
-              <intro>api.html</intro>
-            </html>
-          </output>
-        </configuration>
-      </plugin>
+<!--      <plugin>-->
+<!--        <groupId>com.qmino</groupId>-->
+<!--        <artifactId>miredot-plugin</artifactId>-->
+<!--        <version>2.4.0</version>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <phase>${miredot.phase}</phase>-->
+<!--            <goals>-->
+<!--              <goal>restdoc</goal>-->
+<!--            </goals>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--        <configuration>-->
+<!--          <licence>cHJvamVjdHxvcmcub2hkc2kuV2ViQVBJfDIwMjUtMDEtMDF8ZmFsc2V8LTEjTUN3Q0ZDZkowMkZrVmVSeVlBazZVbTBmNThIbE15SjRBaFEwcVZyRUZuamZMTzJ0KzFtR3E3U3lMMkFESHc9PQ==</licence>-->
+<!--          <restModel>-->
+<!--            <httpStatusCodes>-->
+<!--              <httpStatusCode>-->
+<!--                <httpCode>200</httpCode>-->
+<!--                <document>always</document>-->
+<!--                <defaultMessage>The service call has completed successfully.</defaultMessage>-->
+<!--              </httpStatusCode>-->
+<!--              <httpStatusCode>-->
+<!--                <httpCode>401</httpCode>-->
+<!--                <document>Authorization Exception</document>-->
+<!--                <defaultMessage>The user is not authorized to use this service.</defaultMessage>-->
+<!--              </httpStatusCode>-->
+<!--              <httpStatusCode>-->
+<!--                <httpCode>412</httpCode>-->
+<!--                <document>put,post</document>-->
+<!--                <defaultMessage>Invalid JSON/XML input.</defaultMessage>-->
+<!--              </httpStatusCode>-->
+<!--              <httpStatusCode>-->
+<!--                <httpCode>500</httpCode>-->
+<!--                <document>always</document>-->
+<!--                <defaultMessage>The service call has not succeeded.</defaultMessage>-->
+<!--              </httpStatusCode>-->
+<!--            </httpStatusCodes>-->
+<!--          </restModel>-->
+<!--          <output>-->
+<!--            <html>-->
+<!--              <intro>api.html</intro>-->
+<!--            </html>-->
+<!--          </output>-->
+<!--        </configuration>-->
+<!--      </plugin>-->
     </plugins>
   </build>
 
@@ -523,6 +548,10 @@
       <id>ohdsi</id>
       <name>repo.ohdsi.org</name>
       <url>https://repo.ohdsi.org/nexus/content/groups/public</url>
+    </repository>
+    <repository>
+      <id>central</id>
+      <url>https://repo.maven.apache.org/maven2</url>
     </repository>
   </repositories>
 
@@ -572,6 +601,28 @@
         <groupId>com.amazon.redshift</groupId>
         <artifactId>redshift-jdbc42-no-awssdk</artifactId>
         <version>1.2.10.1009</version>
+      </dependency>
+      <dependency>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        <version>20230227</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>2.7</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.jknack</groupId>
+        <artifactId>handlebars</artifactId>
+        <version>4.4.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.glassfish.jersey</groupId>
+        <artifactId>jersey-bom</artifactId>
+        <version>${jersey.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -638,11 +689,11 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-log4j2</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-tomcat</artifactId>
-      <scope>provided</scope>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.springframework.boot</groupId>-->
+<!--      <artifactId>spring-boot-starter-tomcat</artifactId>-->
+<!--      <scope>provided</scope>-->
+<!--    </dependency>-->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-batch</artifactId>
@@ -651,18 +702,28 @@
     <!-- We are intentionally overriding the Tomcat version from Spring Boot 1.5.22.RELEASE -->
     <!-- and assuming tomcat-jdbc.jar will be in the Tomcat installation folder (\apache-tomcat-8.5.xxx\lib). -->
     <!-- WebAPI.war.original should not contain overridden libraries -->
-    <dependency>
-      <groupId>org.apache.tomcat.embed</groupId>
-      <artifactId>tomcat-embed-el</artifactId>
-      <version>${tomcat.embed.version}</version>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.apache.tomcat.embed</groupId>-->
+<!--      <artifactId>tomcat-embed-el</artifactId>-->
+<!--      <version>${tomcat.embed.version}</version>-->
+<!--    </dependency>-->
+<!--    <dependency>-->
+<!--      <groupId>org.apache.tomcat.embed</groupId>-->
+<!--      <artifactId>tomcat-embed-core</artifactId>-->
+<!--      <version>${tomcat.embed.version}</version>-->
+<!--    </dependency>-->
+<!--    <dependency>-->
+<!--      <groupId>org.apache.tomcat.embed</groupId>-->
+<!--      <artifactId>tomcat-embed-websocket</artifactId>-->
+<!--      <version>${tomcat.embed.version}</version>-->
+<!--    </dependency>-->
 
     <!-- It is overriding a transitive dependency from the dependency above -->
     <!-- After migrating to Spring Boot 2.x we should get rid of it -->
     <dependency>
       <groupId>com.thoughtworks.xstream</groupId>
       <artifactId>xstream</artifactId>
-      <version>1.4.19</version>
+      <version>1.4.20</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -750,11 +811,6 @@
       <groupId>commons-dbutils</groupId>
       <artifactId>commons-dbutils</artifactId>
       <version>1.6</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>2.7</version>
     </dependency>
     <dependency>
       <groupId>com.sun.xml.security</groupId>
@@ -983,11 +1039,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <version>20230227</version>
-    </dependency>
-    <dependency>
       <groupId>org.ohdsi</groupId>
       <artifactId>featureExtraction</artifactId>
       <version>${featureExtraction.version}</version>
@@ -1140,6 +1191,10 @@
           <groupId>org.ohdsi</groupId>
           <artifactId>featureExtraction</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.odysseusinc.arachne</groupId>
+          <artifactId>arachne-common-utils</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -1230,9 +1285,13 @@
         <version>2.0.1</version>
         <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
   </dependencies>
   <profiles>
-    <profile>
+<!--    <profile>
       <id>webapi-oracle</id>
       <properties>
         <datasource.driverClassName>oracle.jdbc.OracleDriver</datasource.driverClassName>
@@ -1248,7 +1307,7 @@
         <flyway.schemas>${datasource.ohdsi.schema}</flyway.schemas>
         <flyway.placeholders.ohdsiSchema>${datasource.ohdsi.schema}</flyway.placeholders.ohdsiSchema>
         <spring.batch.repository.tableprefix>${datasource.ohdsi.schema}.BATCH_</spring.batch.repository.tableprefix>
-        <!--<datasource.validationQuery>SELECT 1 FROM DUAL</datasource.validationQuery>-->
+        &lt;!&ndash;<datasource.validationQuery>SELECT 1 FROM DUAL</datasource.validationQuery>&ndash;&gt;
         <flyway.locations>classpath:db/migration/oracle</flyway.locations>
         <hibernate.dialect>org.hibernate.dialect.Oracle10gDialect</hibernate.dialect>
         <security.db.datasource.url>${datasource.url}</security.db.datasource.url>
@@ -1265,14 +1324,14 @@
           <version>19.8.0.0</version>
         </dependency>
       </dependencies>
-    </profile>
+    </profile>-->
     <profile>
       <id>webapi-postgresql</id>
       <properties>
         <datasource.driverClassName>org.postgresql.Driver</datasource.driverClassName>
-        <datasource.url>jdbc:postgresql://54.209.111.128:5432/vocabularyv5</datasource.url>
-        <datasource.username>USER</datasource.username>
-        <datasource.password>PASS</datasource.password>
+        <datasource.url>jdbc:postgresql://localhost:5432/ohdsi</datasource.url>
+        <datasource.username>postgres</datasource.username>
+        <datasource.password>postgres</datasource.password>
         <datasource.dialect>postgresql</datasource.dialect>
         <datasource.ohdsi.schema>ohdsi</datasource.ohdsi.schema>
         <flyway.datasource.driverClassName>${datasource.driverClassName}</flyway.datasource.driverClassName>
@@ -1299,17 +1358,17 @@
         <git.commit.id.abbrev>unknown</git.commit.id.abbrev>
         <maven.gitcommitid.skip>true</maven.gitcommitid.skip>
         <miredot.phase>none</miredot.phase>
-        <skipTests>true</skipTests>
+        <skipTests>false</skipTests>
         <datasource.driverClassName>org.postgresql.Driver</datasource.driverClassName>
-        <datasource.url>jdbc:postgresql://54.209.111.128:5432/vocabularyv5</datasource.url>
-        <datasource.username>USER</datasource.username>
-        <datasource.password>PASS</datasource.password>
+        <datasource.url>jdbc:postgresql://host.docker.internal:5432/OHDSI</datasource.url>
+        <datasource.username>postgres</datasource.username>
+        <datasource.password>postgres</datasource.password>
         <datasource.dialect>postgresql</datasource.dialect>
         <datasource.ohdsi.schema>ohdsi</datasource.ohdsi.schema>
         <flyway.datasource.driverClassName>${datasource.driverClassName}</flyway.datasource.driverClassName>
         <flyway.datasource.url>${datasource.url}</flyway.datasource.url>
-        <flyway.datasource.username>userWithWritesToOhdsiSchema</flyway.datasource.username>
-        <flyway.datasource.password>PASS</flyway.datasource.password>
+        <flyway.datasource.username>postgres</flyway.datasource.username>
+        <flyway.datasource.password>postgres</flyway.datasource.password>
         <flyway.schemas>${datasource.ohdsi.schema}</flyway.schemas>
         <flyway.placeholders.ohdsiSchema>${datasource.ohdsi.schema}</flyway.placeholders.ohdsiSchema>
         <flyway.locations>classpath:db/migration/postgresql</flyway.locations>
@@ -1323,7 +1382,7 @@
           lower(email) = lower(?)</security.db.datasource.authenticationQuery>
       </properties>
       <repositories>
-	<repository>
+	    <repository>
           <id>ohdsi.snapshots</id>
           <name>repo.ohdsi.org-snapshots</name>
           <url>https://repo.ohdsi.org/nexus/content/repositories/snapshots</url>
@@ -1336,7 +1395,7 @@
     	</repository>
       </repositories>
     </profile>
-    <profile>
+    <!--<profile>
       <id>webapi-mssql</id>
       <properties>
         <datasource.driverClassName>com.microsoft.sqlserver.jdbc.SQLServerDriver</datasource.driverClassName>
@@ -1361,8 +1420,8 @@
         <security.db.datasource.authenticationQuery>select password from ${security.db.datasource.schema}.user where \
           lower(email) = lower(?)</security.db.datasource.authenticationQuery>
       </properties>
-    </profile>
-    <profile>
+    </profile>-->
+    <!--<profile>
       <id>webapi-netezza</id>
       <properties>
         <netezza.enabled>true</netezza.enabled>
@@ -1399,13 +1458,13 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
+    </profile>-->
+    <!--<profile>
       <id>webapi-impala</id>
       <properties>
         <impala.enabled>true</impala.enabled>
         <impala.driver.version>2.6.15</impala.driver.version>
-        <!-- Impala JDBC driver path -->
+        &lt;!&ndash; Impala JDBC driver path &ndash;&gt;
 		<impala.classpath>...path/to/impala/jdbc/drivers...</impala.classpath>
       </properties>
       <dependencies>
@@ -1440,12 +1499,12 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
+    </profile>-->
+    <!--<profile>
       <id>webapi-spark</id>
       <properties>
         <spark.enabled>true</spark.enabled>
-        <!-- Spark JDBC driver path -->
+        &lt;!&ndash; Spark JDBC driver path &ndash;&gt;
         <spark.classpath>${basedir}/src/main/extras/spark</spark.classpath>
       </properties>
       <dependencies>
@@ -1480,8 +1539,8 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
+    </profile>-->
+    <!--<profile>
       <id>webapi-databricks</id>
       <dependencies>
         <dependency>
@@ -1491,12 +1550,12 @@
           <scope>runtime</scope>
         </dependency>
       </dependencies>
-    </profile>
-    <profile>
+    </profile>-->
+    <!--<profile>
       <id>webapi-bigquery</id>
       <properties>
         <bigquery.enabled>true</bigquery.enabled>
-        <!-- BigQuery JDBC driver path -->
+        &lt;!&ndash; BigQuery JDBC driver path &ndash;&gt;
         <bigquery.classpath>${basedir}/src/main/extras/bigquery</bigquery.classpath>
       </properties>
       <dependencies>
@@ -1675,8 +1734,8 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
+    </profile>-->
+    <!--<profile>
       <id>webapi-hive</id>
       <dependencies>
         <dependency>
@@ -1785,11 +1844,11 @@
           <version>1.19.4</version>
         </dependency>
       </dependencies>
-    </profile>
-    <profile>
+    </profile>-->
+    <!--<profile>
       <id>webapi-redshift</id>
       <properties>
-        <!-- Redshift driver path -->
+        &lt;!&ndash; Redshift driver path &ndash;&gt;
         <redshift.classpath>...path/to/redshift/jdbc/drivers...</redshift.classpath>
       </properties>
       <dependencies>
@@ -1817,8 +1876,8 @@
           <version>4.8-1</version>
         </dependency>
       </dependencies>
-    </profile>
-    <profile>
+    </profile>-->
+    <!--<profile>
       <id>webapi-snowflake</id>
       <properties>
         <snowflake.enabled>true</snowflake.enabled>
@@ -1845,7 +1904,7 @@
           <version>${atlasgis.version}</version>
         </dependency>
       </dependencies>
-    </profile>
+    </profile>-->
     <profile>
       <id>webapi-solr</id>
       <properties>

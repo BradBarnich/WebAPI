@@ -14,6 +14,6 @@ import java.util.List;
 public interface AchillesCacheRepository extends CrudRepository<AchillesCacheEntity, Long> {
     AchillesCacheEntity findBySourceAndCacheName(Source source, String type);
 
-    @Query("select ac from AchillesCacheEntity ac where source = :source and cacheName in :names")
+    @Query("select ac from AchillesCacheEntity ac where ac.source = :source and ac.cacheName in :names")
     List<AchillesCacheEntity> findBySourceAndNames(@Param("source") Source source, @Param("names") List<String> names);
 }
