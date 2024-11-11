@@ -2,10 +2,10 @@ FROM maven:3-amazoncorretto-8-al2023 AS builder
 
 WORKDIR /code
 
-ARG MAVEN_PROFILE=webapi-docker
+ARG MAVEN_PROFILE=webapi-postgresql,webapi-docker,webapi-solr,webapi-gis
 ARG MAVEN_PARAMS="" # can use maven options, e.g. -DskipTests=true -DskipUnitTests=true
 
-ARG OPENTELEMETRY_JAVA_AGENT_VERSION=1.17.0
+ARG OPENTELEMETRY_JAVA_AGENT_VERSION=1.33.5
 RUN curl -LSsO https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v${OPENTELEMETRY_JAVA_AGENT_VERSION}/opentelemetry-javaagent.jar
 
 # Download dependencies
